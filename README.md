@@ -3,17 +3,17 @@ Minimal pipewire configuration menu for Gnome Shell
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](/LICENSE.md)
 
-![pipewire-settings-menu](https://github.com/user-attachments/assets/6b364340-4fd1-4007-9cde-e4c709a0d55c)
+<img width="835" height="657" alt="image" src="https://github.com/user-attachments/assets/b854e7ca-999a-4623-926b-3247d0fc93d2" />
+
 
 ## Installation
 ### Easy installation
-Use your favorite extension manager or [the official website](https://extensions.gnome.org/extension/7699/pipewire-settings/).\
-It should work on your next login.
+Use your favorite extension manager or [the official website](https://extensions.gnome.org/extension/7699/pipewire-settings/).
 
 ### Manual installation
 Clone the project and simply run install:
 ```
-git clone https://github.com/gaheldev/pipewire-setting
+git clone https://github.com/gaheldev/pipewire-settings
 cd pipewire-settings
 chmod +x install
 ./install
@@ -23,5 +23,25 @@ You may have to log out and log back in on Wayland.\
 On X11 you can also restart gnome shell with `alt+F2` and running the command `r`.
 
 ## Usage
-Setting a samplerate or buffer size will force pipewire to run with that fixed value.\
-Restoring defaults or setting it to dynamic will use your system's default configuration.
+Setting a samplerate or buffer size will incite pipewire to run with that fixed value.\
+Toggling `Force Settings` will force the graph to run at the specified samplerate and buffer size unless set to dynamic.\
+Toggling `Persist on restart` will load the current configuration on restart. However settings can't be forced automatically on restart.
+
+## Troubleshooting
+
+<details>
+
+<summary>Jack applications do not follow the specified settings</summary>
+<br>
+
+Jack applications will determine their buffer size and samplerate based on the environement variable `PIPEWIRE_QUANTUM` if it is set.
+
+You can use `Force settings` to override it for this current session.
+
+If you do not need it, `PIPEWIRE_QUAANTUM` is typically set in `/etc/profile.d/<some-file>.sh` or in `/etc/profile`.\
+for example with ubuntu studio, you may comment out the content of `/etc/profile.d/ubuntustudio-pwjack.sh`:
+```
+sudo sed -i '1s/^/# /' /etc/profile.d/ubuntustudio-pwjack.sh
+```
+
+</details>

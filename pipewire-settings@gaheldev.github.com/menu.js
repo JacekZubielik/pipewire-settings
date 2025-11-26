@@ -1,6 +1,7 @@
 import GObject from 'gi://GObject';
 import St from 'gi://St';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -25,21 +26,32 @@ class PipewireTopBarMenu extends PanelMenu.Button {
         this.menu.addMenuItem(this.sampleRateItem);
         this._populateSamplerates();
 
-        // separator
-        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-
         // Buffer size submenu
         this.bufferSizeItem = new PopupMenu.PopupSubMenuMenuItem('Buffer size');
         this.menu.addMenuItem(this.bufferSizeItem);
         this._populateBuffers();
 
+        // PIPEWIRE_QUANTUM detection
+        this.envItem = new PopupMenu.PopupMenuItem("placeholder title: set by _updateEnvItem", {
+            can_focus: false,
+            hover: false,
+            reactive: false,
+        });
+        this.menu.addMenuItem(this.envItem);
+
+
         // separator
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-        // Restore defaults button
-        this.restoreItem = new PopupMenu.PopupMenuItem('Restore defaults');
-        this.restoreItem.connect('activate', () => {this._restoreDefaults();});
-        this.menu.addMenuItem(this.restoreItem);
+        // Force settings toggle
+        this.forceSettingsItem = new PopupMenu.PopupSwitchMenuItem("Force settings", false, {});
+        this.forceSettingsItem.connect('toggled', (item, state) => {this._forceSettings(state);});
+        this.menu.addMenuItem(this.forceSettingsItem);
+
+        // Persist changes toggle
+        this.persistChangesItem = new PopupMenu.PopupSwitchMenuItem("Persist on restart", this.config.persistence, {});
+        this.persistChangesItem.connect('toggled', (item, state) => {this._persistChanges(state);});
+        this.menu.addMenuItem(this.persistChangesItem);
 
         // update samplerates and buffer sizes when the menu opens
         // workaround to avoid segmentation faults when using _resetActions
@@ -64,17 +76,32 @@ class PipewireTopBarMenu extends PanelMenu.Button {
         this.bufferSizeItem.menu.removeAll();
         this._populateSamplerates();
         this._populateBuffers();
+        this.persistChangesItem.state = this.config.persistence;
     }
 
 
-    _restoreDefaults() {
-        this.config.setSampleRate(0);
-        this.config.setBufferSize(0);
+    _forceSettings(force) {
+        this.config.setForce(force);
+    }
+
+
+    _persistChanges(persist) {
+        this.config.setPersistence(persist);
+    }
+
+
+    _updateEnvItem() {
+        let pipewireQuantumEnv = GLib.getenv('PIPEWIRE_QUANTUM');
+        if (pipewireQuantumEnv === null) {
+            this.envItem.label.text = 'PIPEWIRE_QUANTUM is not set';
+        } else {
+            this.envItem.label.text = `PIPEWIRE_QUANTUM=${pipewireQuantumEnv}\n\nSome applications (Jack) will use it by default.\n Force settings to override it.`;
+        }
     }
 
 
     _getSampleRateIcon(forceRate) {
-        let ok = 'emblem-ok-symbolic';
+        let ok = 'check-plain-symbolic';
         let nope = 'goa-account-symbolic'; // goa is an empty icon -> probably a hack?
 
         if (!this.config.isForceSampleRate())
@@ -97,7 +124,7 @@ class PipewireTopBarMenu extends PanelMenu.Button {
 
 
     _getBufferSizeIcon(forceSize) {
-        let ok = 'emblem-ok-symbolic';
+        let ok = 'check-plain-symbolic';
         let nope = 'goa-account-symbolic'; // goa is an empty icon -> probably a hack?
 
         if (!this.config.isForceQuantum())
@@ -128,8 +155,7 @@ class PipewireTopBarMenu extends PanelMenu.Button {
         suffix = this.config.isForceQuantum() ? '' : ' (dyn)';
         this.bufferSizeItem.label.text = `Buffer size：${this.config.bufferSize}` + suffix;
 
-        // only make restore button clickable when not in default settings
-        this.restoreItem.reactive = this.config.isForceSampleRate() || this.config.isForceQuantum();
+        this._updateEnvItem()
 
         this._resetActions();
     }

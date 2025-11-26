@@ -4,7 +4,9 @@
   "uuid": "pipewire-settings@gaheldev.github.com",
   "shell-version": [
     "46",
-    "47"
+    "47",
+    "48",
+    "49"
   ],
   "url": "https://github.com/gaheldev/pipewire-settings"
 }
